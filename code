@@ -1,0 +1,331 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+namespace ProductSaleAndStock
+{
+    public interface ICategory
+    {
+        string Name { get; set; }
+    }
+
+    public class ElectronicsCategory : ICategory
+    {
+        public string Name { get; set; } = "Elektronik";
+    }
+
+    public class ClothingCategory : ICategory
+    {
+        public string Name { get; set; } = "Giyim";
+    }
+
+    public class StationeryCategory : ICategory
+    {
+        public string Name { get; set; } = "Kırtasiye";
+    }
+
+    public abstract class Product
+    {
+        public string Name { get; set; }
+        public decimal Price { get; set; }
+        public int Quantity { get; set; }
+        public ICategory Category { get; set; }
+
+        protected Product(string name, decimal price, int quantity)
+        {
+            Name = name;
+            Price = price;
+            Quantity = quantity;
+        }
+    }
+
+    public class ElectronicsProduct : Product
+    {
+        public ElectronicsProduct(string name, decimal price, int quantity) : base(name, price, quantity)
+        {
+            Category = new ElectronicsCategory();
+        }
+    }
+
+    public class ClothingProduct : Product
+    {
+        public ClothingProduct(string name, decimal price, int quantity) : base(name, price, quantity)
+        {
+            Category = new ClothingCategory();
+        }
+    }
+
+    public class StationeryProduct : Product
+    {
+        public StationeryProduct(string name, decimal price, int quantity) : base(name, price, quantity)
+        {
+            Category = new StationeryCategory();
+        }
+    }
+
+    public class Sale
+    {
+        public Product Product { get; set; }
+        public int Quantity { get; set; }
+
+        public Sale(Product product, int quantity)
+        {
+            Product = product;
+            Quantity = quantity;
+        }
+
+        public decimal TotalPrice => Product.Price * Quantity;
+    }
+
+    public class Stock
+    {
+        private Dictionary<string, List<Product>> _products = new Dictionary<string, List<Product>>();
+
+        public Stock()
+        {
+            // Örnek ürünleri ekleyin.
+            AddProduct(new ElectronicsProduct("Bilgisayar", 2000, 10));
+            AddProduct(new ElectronicsProduct("Telefon", 1000, 20));
+            AddProduct(new ClothingProduct("Gömlek", 50, 30));
+            AddProduct(new ClothingProduct("Etek", 40, 40));
+            AddProduct(new StationeryProduct("Kalem", 2, 50));
+            AddProduct(new StationeryProduct("Defter", 5, 60));
+        }
+
+        public void AddProduct(Product product)
+        {
+            if (_products.ContainsKey(product.Category.Name))
+            {
+                _products[product.Category.Name].Add(product);
+            }
+            else
+            {
+                _products[product.Category.Name] = new List<Product> { product };
+            }
+        }
+
+        public void RemoveProduct(Product product)
+        {
+            if (_products.ContainsKey(product.Category.Name))
+            {
+                _products[product.Category.Name].Remove(product);
+            }
+        }
+
+        public List<Product> GetProducts()
+        {
+            return _products.Values.SelectMany(x => x).ToList();
+        }
+
+        public List<Product> GetProductsByCategory(ICategory category)
+        {
+            if (_products.ContainsKey(category.Name))
+            {
+                return _products[category.Name];
+            }
+
+            return new List<Product>();
+        }
+
+        public bool HasStock(Product product, int quantity)
+        {
+            return GetProducts().Any(x => x.Name == product.Name && x.Quantity >= quantity);
+        }
+
+        public void UpdateStock(Product product, int quantity)
+        {
+            var currentProduct = GetProducts().FirstOrDefault(x => x.Name == product.Name);
+
+            if (currentProduct != null)
+            {
+                currentProduct.Quantity -= quantity;
+            }
+        }
+    }
+
+    public class ShoppingCart
+    {
+        private List<Sale> _sales = new List<Sale>();
+
+        public void AddSale(Product product, int quantity)
+        {
+            _sales.Add(new Sale(product, quantity));
+        }
+
+        public void RemoveSale(Product product)
+        {
+            _sales.RemoveAll(x => x.Product.Name == product.Name);
+        }
+
+        public List<Sale> GetSales()
+        {
+            return _sales;
+        }
+
+        public decimal TotalPrice => _sales.Sum(x => x.TotalPrice);
+    }
+
+    public class SalesHistory
+    {
+        private List<Sale> _sales = new List<Sale>();
+
+        public void AddSale(Sale sale)
+        {
+            _sales.Add(sale);
+        }
+
+        public List<Sale> GetSales()
+        {
+            return _sales;
+        }
+
+        public decimal TotalPrice => _sales.Sum(x => x.TotalPrice);
+    }
+
+    public class Program
+    {
+        private static Stock _stock = new Stock();
+        private static ShoppingCart _shoppingCart = new ShoppingCart();
+        private static SalesHistory _salesHistory = new SalesHistory();
+
+        public static void Main()
+        {
+            // "KART NUMARASI" kontrolü.
+            Console.Write("Lütfen kart numaranızı girin: ");
+            var cardNumber = Console.ReadLine();
+
+            if (string.IsNullOrEmpty(cardNumber) || cardNumber.Length != 16)
+            {
+                Console.WriteLine("Geçersiz kart numarası. Lütfen geçerli bir kart numarası girin.");
+                return;
+            }
+
+            // Ürün seçme ekranı.
+            while (true)
+            
+                Console.WriteLine("Ürün kategorileri:");
+                Console.WriteLine("1. Elektronik");
+                Console.WriteLine("2. Giyim");
+                Console.WriteLine("3. Kırtasiye");
+                Console.WriteLine("4. Sepeti görüntüle");
+                Console.WriteLine("5. Ödeme yap");
+                Console.WriteLine("6. Çıkış");
+
+                Console.Write("Lütfen seçiminizi girin: ");
+                var choice = Console.ReadLine();
+
+                if (choice == "1")
+                {
+                    // Elektronik ürünleri listele.
+                    var products = _stock.GetProductsByCategory(new ElectronicsCategory());
+
+                    if (products.Count == 0)
+                    {
+                        Console.WriteLine("Stokta elektronik ürün bulunmamaktadır.");
+                        continue;
+                    }
+
+                    Console.WriteLine("Elektronik ürünler:");
+
+                    for (int i = 0; i < products.Count; i++)
+                    {
+                        Console.WriteLine($"{i + 1}. {products[i].Name} - {products[i].Price:C2} - Adet: {products[i].Quantity}");
+                    }
+
+                    Console.Write("Lütfen seçiminizi girin: ");
+                    var productChoice = Console.ReadLine();
+
+                    if (int.TryParse(productChoice, out var selectedProductIndex) && selectedProductIndex > 0 && selectedProductIndex <= products.Count)
+                    {
+                        Console.Write("Lütfen adet girin: ");
+                        var quantity = int.Parse(Console.ReadLine()!);
+
+                        var selectedProduct = products[selectedProductIndex - 1];
+
+                        if (_stock.HasStock(selectedProduct, quantity))
+                        {
+                            _shoppingCart.AddSale(selectedProduct, quantity);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Stokta yeterli ürün bulunmamaktadır.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Geçersiz seçim.");
+                    }
+                    break; 
+                }
+                
+
+                // Diğer kategoriler için aynı işlemler.
+
+                case "4":
+                {
+                    // Sepeti görüntüle.
+                    var sales = _shoppingCart.GetSales();
+
+                    if (sales.Count == 0)
+                    {
+                        Console.WriteLine("Sepetinizde ürün bulunmamaktadır.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Sepetinizdeki ürünler:");
+
+                        for (int i = 0; i < sales.Count; i++)
+                        {
+                            Console.WriteLine($"{i + 1}. {sales[i].Product.Name} - {sales[i].TotalPrice:C2}");
+                        }
+                    }
+
+                    break;
+                }
+
+                case "5":
+                {
+                    // Ödeme yap.
+                    var sales = _shoppingCart.GetSales();
+
+                    if (sales.Count == 0)
+                    {
+                        Console.WriteLine("Sepetinizde ürün bulunmamaktadır.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Ödeme yapılıyor...");
+
+                        foreach (var sale in sales)
+                        {
+                            _stock.UpdateStock(sale.Product, sale.Quantity);
+                            _salesHistory.AddSale(sale);
+                        }
+
+                        _shoppingCart = new ShoppingCart();
+
+                        Console.WriteLine("Ödeme başarıyla tamamlandı.");
+                    }
+
+                    break;
+                }
+
+                case "6":
+                {
+                    // Çıkış.
+                    Console.WriteLine("Çıkış yapılıyor...");
+                    return;
+                }
+
+                default:
+                {
+                    Console.WriteLine("Geçersiz seçim.");
+                    break;
+                }
+            }
+        }
+    }
+}
