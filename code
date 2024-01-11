@@ -185,40 +185,43 @@ namespace ProductSaleAndStock
         public decimal TotalPrice => _sales.Sum(x => x.TotalPrice);
     }
 
-    public class Program
+    // Diğer using ifadeleri buraya eklenmeli
+
+public class Program
+{
+    private static Stock _stock = new Stock();
+    private static ShoppingCart _shoppingCart = new ShoppingCart();
+    private static SalesHistory _salesHistory = new SalesHistory();
+
+    public static void Main()
     {
-        private static Stock _stock = new Stock();
-        private static ShoppingCart _shoppingCart = new ShoppingCart();
-        private static SalesHistory _salesHistory = new SalesHistory();
+        // "KART NUMARASI" kontrolü.
+        Console.Write("Lütfen kart numaranızı girin: ");
+        var cardNumber = Console.ReadLine();
 
-        public static void Main()
+        if (string.IsNullOrEmpty(cardNumber) || cardNumber.Length != 16)
         {
-            // "KART NUMARASI" kontrolü.
-            Console.Write("Lütfen kart numaranızı girin: ");
-            var cardNumber = Console.ReadLine();
+            Console.WriteLine("Geçersiz kart numarası. Lütfen geçerli bir kart numarası girin.");
+            return;
+        }
 
-            if (string.IsNullOrEmpty(cardNumber) || cardNumber.Length != 16)
+        // Ürün seçme ekranı.
+        while (true)
+        {
+            Console.WriteLine("Ürün kategorileri:");
+            Console.WriteLine("1. Elektronik");
+            Console.WriteLine("2. Giyim");
+            Console.WriteLine("3. Kırtasiye");
+            Console.WriteLine("4. Sepeti görüntüle");
+            Console.WriteLine("5. Ödeme yap");
+            Console.WriteLine("6. Çıkış");
+
+            Console.Write("Lütfen seçiminizi girin: ");
+            var choice = Console.ReadLine();
+
+            switch (choice)
             {
-                Console.WriteLine("Geçersiz kart numarası. Lütfen geçerli bir kart numarası girin.");
-                return;
-            }
-
-            // Ürün seçme ekranı.
-            while (true)
-            
-                Console.WriteLine("Ürün kategorileri:");
-                Console.WriteLine("1. Elektronik");
-                Console.WriteLine("2. Giyim");
-                Console.WriteLine("3. Kırtasiye");
-                Console.WriteLine("4. Sepeti görüntüle");
-                Console.WriteLine("5. Ödeme yap");
-                Console.WriteLine("6. Çıkış");
-
-                Console.Write("Lütfen seçiminizi girin: ");
-                var choice = Console.ReadLine();
-
-                if (choice == "1")
-                {
+                case "1":
                     // Elektronik ürünleri listele.
                     var products = _stock.GetProductsByCategory(new ElectronicsCategory());
 
@@ -258,14 +261,11 @@ namespace ProductSaleAndStock
                     {
                         Console.WriteLine("Geçersiz seçim.");
                     }
-                    break; 
-                }
-                
+                    break;
 
                 // Diğer kategoriler için aynı işlemler.
 
                 case "4":
-                {
                     // Sepeti görüntüle.
                     var sales = _shoppingCart.GetSales();
 
@@ -284,10 +284,8 @@ namespace ProductSaleAndStock
                     }
 
                     break;
-                }
 
                 case "5":
-                {
                     // Ödeme yap.
                     var sales = _shoppingCart.GetSales();
 
@@ -311,21 +309,17 @@ namespace ProductSaleAndStock
                     }
 
                     break;
-                }
 
                 case "6":
-                {
                     // Çıkış.
                     Console.WriteLine("Çıkış yapılıyor...");
                     return;
-                }
 
                 default:
-                {
                     Console.WriteLine("Geçersiz seçim.");
                     break;
-                }
             }
         }
     }
 }
+
